@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Attrition Predictor</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        label { display: block; margin-top: 10px; }
+        input, select { padding: 6px; width: 260px; }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+
+
+<body>
+
+<button class="toggle-btn" onclick="toggleDarkMode()">
+    🌙 Dark Mode
+</button>   
+    
+<div class="hero">
+    <h1><i class="fa-solid fa-brain"></i> Attrition Intelligence</h1>
+    <p>Predict employee churn using machine learning insights</p>
+</div>
+
+<form method="POST">
+
+
+    
+<h2 class="section-title">
+    <i class="fa-solid fa-chart-line"></i> Numeric Features
+</h2>
+
+<div class="form-grid">
+{% for feature in num_features %}
+<div class="input-card">
+<label><i class="fa-solid fa-hashtag"></i> {{ feature }}</label>
+<input type="number" step="any"
+name="{{ feature }}"
+value="{{ input_values.get(feature,'') }}"
+required>
+</div>
+{% endfor %}
+</div>
+
+
+
+<h2 class="section-title">
+    <i class="fa-solid fa-layer-group"></i> Categorical Features
+</h2>
+
+<div class="form-grid">
+{% for feature, options in cat_features.items() %}
+<div class="input-card">
+<label><i class="fa-solid fa-list"></i> {{ feature }}</label>
+<select name="{{ feature }}" required>
+{% for option in options %}
+<option value="{{ option }}"
+{% if input_values.get(feature)==option %}selected{% endif %}>
+{{ option }}
+</option>
+{% endfor %}
+</select>
+</div>
+{% endfor %}
+</div>
+
+
+
+
+<button class="predict-btn">Predict Attrition Risk</button>
+
+</form>
+
+
+
+<!-- ----------------------------------------------Results--------------------------------------------- -->
+
+
+
+{% if prediction is not none %}
+
+<div class="result-box">
+
+<div class="result-title">
+    <i class="fa-solid fa-chart-pie"></i> Prediction Insights
+</div>
+
+
+
+<p><b>Prediction:</b> {{ "Attrition Risk" if prediction == 1 else "No Attrition" }}</p>
+
+
+<p><b>Probability:</b> {{ "%.2f"|format(probability * 100) }}%</p>
+
+<div class="progress-container">
+    <div class="progress-bar">
+        <div id="progressFill"
+             class="progress-fill {{ risk|lower }}"
+             data-prob="{{ probability * 100 }}">
+        </div>
+    </div>
+</div>
+
+<p class="risk"><b>Risk Level:</b> {{ risk }}</p>
+
+<h3>Top Factors Influencing Prediction</h3>
+
+<div class="shap-container">
+    <div class="result-title">
+        <i class="fa-solid fa-magnifying-glass-chart"></i> Feature Impact
+    </div>
+
+    {% for item in shap_data %}
+        <div class="shap-bar">
+        
+        <div class="shap-label">
+            {{ item.label.replace("cat__", "").replace("num__", "").replace("_", " ") }}
+        </div>
+
+        <div class="shap-track">
+            <div class="shap-fill 
+                {% if item.value > 0 %}positive{% else %}negative{% endif %}"
+                data-value="{{ item.value }}">
+            </div>
+        </div>
+
+        <div style="width:60px; text-align:right; font-size:12px;">
+            {{ item.value }}
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+</div>
+
+{% endif %}
+
+
+<!-- -----------------------------------JS----------------------------------- -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    const bar = document.getElementById("progressFill");
+    if(bar){
+        let value = bar.getAttribute("data-prob");
+        bar.style.width = value + "%";
+    }
+});
+</script>
+
+<script>
+function toggleDarkMode(){
+    document.body.classList.toggle("dark-mode");
+
+    // save preference
+    if(document.body.classList.contains("dark-mode")){
+        localStorage.setItem("theme","dark");
+    }else{
+        localStorage.setItem("theme","light");
+    }
+}
+
+// load saved theme
+window.onload = function(){
+    if(localStorage.getItem("theme") === "dark"){
+        document.body.classList.add("dark-mode");
+    }
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const bars = document.querySelectorAll(".shap-fill");
+
+    let maxVal = 0;
+
+    bars.forEach(bar => {
+        let val = Math.abs(parseFloat(bar.getAttribute("data-value")));
+        if(val > maxVal) maxVal = val;
+    });
+
+    bars.forEach(bar => {
+        let val = Math.abs(parseFloat(bar.getAttribute("data-value")));
+        let percent = (val / maxVal) * 100;
+        bar.style.width = percent + "%";
+    });
+
+});
+</script>
+
+</body>
+</html>
