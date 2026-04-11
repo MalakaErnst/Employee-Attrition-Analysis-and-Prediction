@@ -77,34 +77,32 @@ def home():
                 pass
 
         # -----------------------------
+        # TRANSFORM DATA
+        # -----------------------------
+        X_transformed = preprocessor.transform(df)
+        
+        # -----------------------------
         # SHAP EXPLANATION
         # -----------------------------
-
-        # Create explainer ONLY when needed
         explainer = shap.TreeExplainer(final_model)
-        
         shap_vals = explainer.shap_values(X_transformed)
         
-        # Handle binary classifier output
+        # handle binary output
         if isinstance(shap_vals, list):
             shap_contrib = shap_vals[1][0]
         else:
             shap_contrib = shap_vals[0]
         
-        # Feature names after preprocessing
         feature_names = preprocessor.get_feature_names_out()
         
-        # Top 5 features
         top_shap = sorted(
             zip(feature_names, shap_contrib),
             key=lambda x: abs(x[1]),
             reverse=True
         )[:5]
         
-        # Prepare for frontend
         shap_labels = [str(x[0]) for x in top_shap]
-        shap_values = [round(float(x[1]), 4) for x in top_shap
-                    ]
+        shap_values = [round(float(x[1]), 4) for x in top_shap]
 
         # -----------------------------
         # PREDICTION
