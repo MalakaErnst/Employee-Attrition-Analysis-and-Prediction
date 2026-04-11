@@ -44,7 +44,7 @@ NUMERIC_FEATURES = preprocessor.transformers_[1][2]
 # SHAP EXPLAINER (created once)
 # ------------------------------------------------
 
-explainer = None
+# explainer = None
 
 # ------------------------------------------------
 # FLASK ROUTE
@@ -79,29 +79,31 @@ def home():
         # SHAP EXPLANATION
         # -----------------------------
 
-        X_transformed = preprocessor.transform(df)
+        # Create explainer ONLY when needed
+        explainer = shap.TreeExplainer(final_model)
+        
         shap_vals = explainer.shap_values(X_transformed)
-
-        # Handle binary classification
+        
+        # Handle binary classifier output
         if isinstance(shap_vals, list):
-            shap_contrib = shap_vals[1][0]  # class 1 (attrition)
+            shap_contrib = shap_vals[1][0]
         else:
             shap_contrib = shap_vals[0]
-
+        
+        # Feature names after preprocessing
+        feature_names = preprocessor.get_feature_names_out()
+        
         # Top 5 features
         top_shap = sorted(
-            zip(FEATURE_NAMES_TRANSFORMED, shap_contrib),
+            zip(feature_names, shap_contrib),
             key=lambda x: abs(x[1]),
             reverse=True
         )[:5]
-
-        shap_data = [
-                {
-                    "label": str(x[0]),
-                    "value": round(float(x[1]), 4)
-                }
-                for x in top_shap
-            ]
+        
+        # Prepare for frontend
+        shap_labels = [str(x[0]) for x in top_shap]
+        shap_values = [round(float(x[1]), 4) for x in top_shap
+                    ]
 
         # -----------------------------
         # PREDICTION
@@ -125,7 +127,6 @@ def home():
         cat_features=CATEGORY_MAP,
         shap_data=shap_data,
         num_features=NUMERIC_FEATURES,
-        explainer = shap.TreeExplainer(final_model),
         prediction=prediction,
         probability=probability,
         input_values=input_values,
