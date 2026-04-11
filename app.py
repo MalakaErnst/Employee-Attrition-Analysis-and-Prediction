@@ -56,6 +56,7 @@ def home():
     prediction = None
     probability = None
     risk = None
+    # shap_data = None
     shap_labels = []
     shap_values = []
     input_values = {}
@@ -125,7 +126,6 @@ def home():
     return render_template(
         "index.html",
         cat_features=CATEGORY_MAP,
-        shap_data=shap_data,
         num_features=NUMERIC_FEATURES,
         prediction=prediction,
         probability=probability,
