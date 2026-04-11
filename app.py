@@ -44,7 +44,7 @@ NUMERIC_FEATURES = preprocessor.transformers_[1][2]
 # SHAP EXPLAINER (created once)
 # ------------------------------------------------
 
-explainer = shap.TreeExplainer(final_model)
+explainer = None
 
 # ------------------------------------------------
 # FLASK ROUTE
@@ -125,6 +125,7 @@ def home():
         cat_features=CATEGORY_MAP,
         shap_data=shap_data,
         num_features=NUMERIC_FEATURES,
+        explainer = shap.TreeExplainer(final_model),
         prediction=prediction,
         probability=probability,
         input_values=input_values,
