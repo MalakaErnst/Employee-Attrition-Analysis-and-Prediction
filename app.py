@@ -66,47 +66,47 @@ def home():
             prediction = "Attrition" if pred == 1 else "No Attrition"
             probability = round(prob * 100, 2)
 
-          # ----------------------------
-# 3. SHAP (FIXED for calibrated model)
-# ----------------------------
-try:
-    # Extract actual pipeline from calibrated model
-    base_pipeline = model.calibrated_classifiers_[0].estimator
-
-    print("Base pipeline type:", type(base_pipeline))
-
-    # Get preprocess + classifier
-    preprocess = base_pipeline.named_steps['preprocess']
-    clf = base_pipeline.named_steps['classifier']
-
-    # Transform input
-    X_transformed = preprocess.transform(input_df)
-
-    # SHAP explainer
-    explainer = shap.TreeExplainer(clf)
-
-    shap_vals = explainer.shap_values(X_transformed)
-
-    # Binary classification fix
-    shap_values = shap_vals[1][0]
-
-    # Feature names
-    feature_names = preprocess.get_feature_names_out()
-
-    # Build shap_data
-    shap_data = [
-        {"feature": name, "value": float(val)}
-        for name, val in zip(feature_names, shap_values)
-    ]
-
-    # Sort top features
-    shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
-
-    print("SHAP DATA:", shap_data)
-
-except Exception as e:
-    print("SHAP ERROR:", e)
-    shap_data = None
+            # ----------------------------
+            # 3. SHAP (FIXED for calibrated model)
+            # ----------------------------
+            try:
+                # Extract actual pipeline from calibrated model
+                base_pipeline = model.calibrated_classifiers_[0].estimator
+            
+                print("Base pipeline type:", type(base_pipeline))
+            
+                # Get preprocess + classifier
+                preprocess = base_pipeline.named_steps['preprocess']
+                clf = base_pipeline.named_steps['classifier']
+            
+                # Transform input
+                X_transformed = preprocess.transform(input_df)
+            
+                # SHAP explainer
+                explainer = shap.TreeExplainer(clf)
+            
+                shap_vals = explainer.shap_values(X_transformed)
+            
+                # Binary classification fix
+                shap_values = shap_vals[1][0]
+            
+                # Feature names
+                feature_names = preprocess.get_feature_names_out()
+            
+                # Build shap_data
+                shap_data = [
+                    {"feature": name, "value": float(val)}
+                    for name, val in zip(feature_names, shap_values)
+                ]
+            
+                # Sort top features
+                shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
+            
+                print("SHAP DATA:", shap_data)
+            
+            except Exception as e:
+                print("SHAP ERROR:", e)
+                shap_data = None
 
     # ----------------------------
     # 4. Render
