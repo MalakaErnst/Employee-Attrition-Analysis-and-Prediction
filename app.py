@@ -1,3 +1,16 @@
+from flask import Flask, render_template, request
+import pandas as pd
+import joblib
+import shap
+
+app = Flask(__name__)   # 🔥 MUST COME BEFORE ANY @app.route
+
+# ------------------------------------------------
+# LOAD MODEL
+# ------------------------------------------------
+
+model = joblib.load("attrition_model_calibrated.joblib")
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
