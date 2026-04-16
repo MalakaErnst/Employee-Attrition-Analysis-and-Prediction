@@ -66,44 +66,47 @@ def home():
             prediction = "Attrition" if pred == 1 else "No Attrition"
             probability = round(prob * 100, 2)
 
-            # ----------------------------
-            # 3. SHAP (safe block)
-            # ----------------------------
-            try:
-                # Transform input
-                X_transformed = model.named_steps['preprocess'].transform(input_df)
+          # ----------------------------
+# 3. SHAP (FIXED for calibrated model)
+# ----------------------------
+try:
+    # Extract actual pipeline from calibrated model
+    base_pipeline = model.calibrated_classifiers_[0].estimator
 
-                # Get classifier
-                clf = model.named_steps['classifier']
+    print("Base pipeline type:", type(base_pipeline))
 
-                # SHAP explainer
-                explainer = shap.TreeExplainer(clf)
+    # Get preprocess + classifier
+    preprocess = base_pipeline.named_steps['preprocess']
+    clf = base_pipeline.named_steps['classifier']
 
-                shap_vals = explainer.shap_values(X_transformed)
+    # Transform input
+    X_transformed = preprocess.transform(input_df)
 
-                # Binary classification fix
-                shap_values = shap_vals[1][0]
+    # SHAP explainer
+    explainer = shap.TreeExplainer(clf)
 
-                # Feature names after encoding
-                feature_names = model.named_steps['preprocess'].get_feature_names_out()
+    shap_vals = explainer.shap_values(X_transformed)
 
-                # Build shap_data
-                shap_data = [
-                    {"feature": name, "value": float(val)}
-                    for name, val in zip(feature_names, shap_values)
-                ]
+    # Binary classification fix
+    shap_values = shap_vals[1][0]
 
-                # Sort by importance
-                shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
+    # Feature names
+    feature_names = preprocess.get_feature_names_out()
 
-                print("SHAP DATA:", shap_data)
+    # Build shap_data
+    shap_data = [
+        {"feature": name, "value": float(val)}
+        for name, val in zip(feature_names, shap_values)
+    ]
 
-            except Exception as e:
-                print("SHAP ERROR:", e)
-                shap_data = None  # don't crash app
+    # Sort top features
+    shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
 
-        except Exception as e:
-            print("PREDICTION ERROR:", e)
+    print("SHAP DATA:", shap_data)
+
+except Exception as e:
+    print("SHAP ERROR:", e)
+    shap_data = None
 
     # ----------------------------
     # 4. Render
