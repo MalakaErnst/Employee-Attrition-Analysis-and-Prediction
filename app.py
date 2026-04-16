@@ -75,11 +75,14 @@ def home():
                 df[col] = pd.to_numeric(df[col])
             except:
                 pass
-
+        print("SHAP values:", shap_vals)
+        
         # -----------------------------
         # TRANSFORM DATA
         # -----------------------------
-        X_transformed = preprocessor.transform(df)
+        
+        # X_transformed = preprocessor.transform(df)
+        X_transformed = model.named_steps['preprocess'].transform(input_df)
         
         # -----------------------------
         # SHAP EXPLANATION
@@ -93,16 +96,28 @@ def home():
         else:
             shap_contrib = shap_vals[0]
         
-        feature_names = preprocessor.get_feature_names_out()
+        # feature_names = preprocessor.get_feature_names_out()
         
-        top_shap = sorted(
-            zip(feature_names, shap_contrib),
-            key=lambda x: abs(x[1]),
-            reverse=True
-        )[:5]
+        # top_shap = sorted(
+        #     zip(feature_names, shap_contrib),
+        #     key=lambda x: abs(x[1]),
+        #     reverse=True
+        # )[:5]
         
-        shap_labels = [str(x[0]) for x in top_shap]
-        shap_values = [round(float(x[1]), 4) for x in top_shap]
+        # shap_labels = [str(x[0]) for x in top_shap]
+        # shap_values = [round(float(x[1]), 4) for x in top_shap]
+
+        feature_names = model.named_steps['preprocess'].get_feature_names_out()
+
+        shap_data = []
+        for name, val in zip(feature_names, shap_values):
+            shap_data.append({
+                "feature": name,
+                "value": float(val)
+            })
+        
+        # sort by importance
+        shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
 
         # -----------------------------
         # PREDICTION
@@ -128,6 +143,7 @@ def home():
         prediction=prediction,
         probability=probability,
         input_values=input_values,
+        shap_data=shap_data,
         risk=risk
     )
 
