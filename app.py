@@ -1,126 +1,88 @@
-from flask import Flask, render_template, request
-import pandas as pd
-import joblib
-import shap
-import numpy as np
-
-app = Flask(__name__)
-
-# Load model once
-model = joblib.load("attrition_model_calibrated.joblib")
-
-print("Base pipeline type:", type(model))
-
 @app.route("/", methods=["GET", "POST"])
 def home():
+
     prediction = None
     probability = None
-    shap_data = None  # ✅ prevents crash on GET
+    risk = None
+
+    shap_labels = []
+    shap_values = []
+    input_values = {}
 
     if request.method == "POST":
-        try:
-            # ----------------------------
-            # 1. Collect form data
-            # ----------------------------
-            input_data = {
-                "Age": int(request.form["Age"]),
-                "BusinessTravel": request.form["BusinessTravel"],
-                "DailyRate": int(request.form["DailyRate"]),
-                "Department": request.form["Department"],
-                "DistanceFromHome": int(request.form["DistanceFromHome"]),
-                "Education": int(request.form["Education"]),
-                "EducationField": request.form["EducationField"],
-                "EnvironmentSatisfaction": int(request.form["EnvironmentSatisfaction"]),
-                "Gender": request.form["Gender"],
-                "HourlyRate": int(request.form["HourlyRate"]),
-                "JobInvolvement": int(request.form["JobInvolvement"]),
-                "JobLevel": int(request.form["JobLevel"]),
-                "JobRole": request.form["JobRole"],
-                "JobSatisfaction": int(request.form["JobSatisfaction"]),
-                "MaritalStatus": request.form["MaritalStatus"],
-                "MonthlyIncome": int(request.form["MonthlyIncome"]),
-                "MonthlyRate": int(request.form["MonthlyRate"]),
-                "NumCompaniesWorked": int(request.form["NumCompaniesWorked"]),
-                "OverTime": request.form["OverTime"],
-                "PercentSalaryHike": int(request.form["PercentSalaryHike"]),
-                "PerformanceRating": int(request.form["PerformanceRating"]),
-                "RelationshipSatisfaction": int(request.form["RelationshipSatisfaction"]),
-                "StockOptionLevel": int(request.form["StockOptionLevel"]),
-                "TotalWorkingYears": int(request.form["TotalWorkingYears"]),
-                "TrainingTimesLastYear": int(request.form["TrainingTimesLastYear"]),
-                "WorkLifeBalance": int(request.form["WorkLifeBalance"]),
-                "YearsAtCompany": int(request.form["YearsAtCompany"]),
-                "YearsInCurrentRole": int(request.form["YearsInCurrentRole"]),
-                "YearsSinceLastPromotion": int(request.form["YearsSinceLastPromotion"]),
-                "YearsWithCurrManager": int(request.form["YearsWithCurrManager"]),
-            }
 
-            input_df = pd.DataFrame([input_data])
+        # Collect form inputs
+        for feature in FEATURES:
+            input_values[feature] = request.form.get(feature)
 
-            # ----------------------------
-            # 2. Prediction
-            # ----------------------------
-            pred = model.predict(input_df)[0]
-            prob = model.predict_proba(input_df)[0][1]
+        df = pd.DataFrame([input_values])
 
-            prediction = "Attrition" if pred == 1 else "No Attrition"
-            probability = round(prob * 100, 2)
-
-            # ----------------------------
-            # 3. SHAP (FIXED for calibrated model)
-            # ----------------------------
+        # Convert numeric columns safely
+        for col in NUMERIC_FEATURES:
             try:
-                # Extract actual pipeline from calibrated model
-                base_pipeline = model.calibrated_classifiers_[0].estimator
-            
-                print("Base pipeline type:", type(base_pipeline))
-            
-                # Get preprocess + classifier
-                preprocess = base_pipeline.named_steps['preprocess']
-                clf = base_pipeline.named_steps['classifier']
-            
-                # Transform input
-                X_transformed = preprocess.transform(input_df)
-            
-                # SHAP explainer
-                explainer = shap.TreeExplainer(clf)
-            
-                shap_vals = explainer.shap_values(X_transformed)
-            
-                # Binary classification fix
-                shap_values = shap_vals[1][0]
-            
-                # Feature names
-                feature_names = preprocess.get_feature_names_out()
-            
-                # Build shap_data
-                shap_data = [
-                    {"feature": name, "value": float(val)}
-                    for name, val in zip(feature_names, shap_values)
-                ]
-            
-                # Sort top features
-                shap_data = sorted(shap_data, key=lambda x: abs(x["value"]), reverse=True)[:10]
-            
-                print("SHAP DATA:", shap_data)
-            
-            except Exception as e:
-                print("SHAP ERROR:", e)
-                shap_data = None
+                df[col] = pd.to_numeric(df[col])
+            except:
+                pass
 
-    # ----------------------------
-    # 4. Render
-    # ----------------------------
+        # -----------------------------
+        # TRANSFORM DATA
+        # -----------------------------
+        X_transformed = preprocessor.transform(df)
+
+        # -----------------------------
+        # SHAP (SAFE VERSION)
+        # -----------------------------
+        try:
+            explainer = shap.TreeExplainer(final_model)
+            shap_vals = explainer.shap_values(X_transformed)
+
+            # binary classification handling
+            if isinstance(shap_vals, list):
+                shap_contrib = shap_vals[1][0]
+            else:
+                shap_contrib = shap_vals[0]
+
+            feature_names = preprocessor.get_feature_names_out()
+
+            top_shap = sorted(
+                zip(feature_names, shap_contrib),
+                key=lambda x: abs(x[1]),
+                reverse=True
+            )[:5]
+
+            shap_labels = [str(x[0]) for x in top_shap]
+            shap_values = [round(float(x[1]), 4) for x in top_shap]
+
+            print("SHAP:", list(zip(shap_labels, shap_values)))
+
+        except Exception as e:
+            print("SHAP ERROR:", e)
+            shap_labels = []
+            shap_values = []
+
+        # -----------------------------
+        # PREDICTION
+        # -----------------------------
+        probability = model.predict_proba(df)[0][1]
+        prediction = int(probability >= 0.35)
+
+        if probability < 0.25:
+            risk = "Low"
+        elif probability < 0.55:
+            risk = "Moderate"
+        elif probability < 0.75:
+            risk = "High"
+        else:
+            risk = "Critical"
+
     return render_template(
         "index.html",
+        cat_features=CATEGORY_MAP,
+        num_features=NUMERIC_FEATURES,
         prediction=prediction,
         probability=probability,
-        shap_data=shap_data
+        input_values=input_values,
+        risk=risk,
+        shap_labels=shap_labels,   # ✅ added
+        shap_values=shap_values    # ✅ added
     )
-
-
-# ----------------------------
-# 5. Run locally (Render ignores this)
-# ----------------------------
-if __name__ == "__main__":
-    app.run(debug=True)
