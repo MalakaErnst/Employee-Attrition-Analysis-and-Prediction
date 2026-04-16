@@ -11,6 +11,30 @@ app = Flask(__name__)   # 🔥 MUST COME BEFORE ANY @app.route
 
 model = joblib.load("attrition_model_calibrated.joblib")
 
+# ------------------------------------------------
+# PIPELINE COMPONENTS
+# ------------------------------------------------
+
+preprocessor = base_pipeline.named_steps["preprocess"]
+final_model = base_pipeline.named_steps["model"]
+
+FEATURES = list(preprocessor.feature_names_in_)
+FEATURE_NAMES_TRANSFORMED = preprocessor.get_feature_names_out()
+
+# ------------------------------------------------
+# FEATURE TYPES
+# ------------------------------------------------
+
+cat_features = preprocessor.transformers_[0][2]
+encoder = preprocessor.transformers_[0][1]
+
+CATEGORY_MAP = {
+    feature: categories.tolist()
+    for feature, categories in zip(cat_features, encoder.categories_)
+}
+
+NUMERIC_FEATURES = preprocessor.transformers_[1][2]
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
