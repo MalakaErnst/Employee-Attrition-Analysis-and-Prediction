@@ -43,7 +43,7 @@ def home():
     prediction = None
     probability = None
     risk = None
-
+    shap_data = []
     shap_labels = []
     shap_values = []
     input_values = {}
