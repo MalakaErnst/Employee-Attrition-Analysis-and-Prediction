@@ -37,6 +37,33 @@ CATEGORY_MAP = {
 
 NUMERIC_FEATURES = preprocessor.transformers_[1][2]
 
+NUMERIC_RANGES = {
+    "Age": (18, 60),
+    "MonthlyIncome": (1000, 20000),
+    "MonthlyRate": (1000, 20000),
+    "HourlyRate": (30, 200),
+    "DistanceFromHome": (1, 30),
+    "YearsAtCompany": (0, 40),
+    "DailyRate": (300, 3000),
+    "YearsInCurrentRole": (0, 10),
+    "PercentSalaryHike": (5, 30),
+    "TrainingTimesLastYear": (0, 7),
+    "YearsSinceLastPromotion": (0, 10),
+    "YearsWithCurrManager": (0, 10),
+    "TotalWorkingYears": (0, 40),
+
+    # Satisfaction columns → fixed 1–5
+    "JobSatisfaction": (1, 5),
+    "EnvironmentSatisfaction": (1, 5),
+    "PerformanceRating": (1, 5),
+    "JobInvolvement": (1, 5),
+    "JobLevel": (1, 5),
+    "RelationshipSatisfaction": (1, 5),
+    "WorkLifeBalance": (1, 5),
+    "Education": (1, 5),
+    "StockOptionLevel": (0, 5),
+}
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
