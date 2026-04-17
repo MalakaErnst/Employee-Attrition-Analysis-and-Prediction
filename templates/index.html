@@ -39,10 +39,31 @@
 {% for feature in num_features %}
 <div class="input-card">
 <label><i class="fa-solid fa-hashtag"></i> {{ feature }}</label>
+
+{% if feature in rating_features %}
+
+<!-- DROPDOWN 1–5 -->
+<select name="{{ feature }}" required>
+    {% for i in range(1,6) %}
+    <option value="{{ i }}"
+    {% if input_values.get(feature)==i|string %}selected{% endif %}>
+        {{ i }}
+    </option>
+    {% endfor %}
+</select>
+
+{% else %}
+
+<!-- NORMAL NUMERIC INPUT -->
 <input type="number" step="any"
 name="{{ feature }}"
 value="{{ input_values.get(feature,'') }}"
+data-min="{{ feature_ranges.get(feature, [0,100])[0] }}"
+data-max="{{ feature_ranges.get(feature, [0,100])[1] }}"
 required>
+
+{% endif %}
+
 </div>
 {% endfor %}
 </div>
@@ -201,22 +222,21 @@ document.addEventListener("DOMContentLoaded", function(){
 <script>
 function fillRandom(){
 
-    // Fill numeric inputs
+    // Numeric inputs with real ranges
     document.querySelectorAll("input[type='number']").forEach(input => {
-        let min = input.min ? parseFloat(input.min) : 0;
-        let max = input.max ? parseFloat(input.max) : 100;
 
-        // fallback range if not defined
-        if (!input.min && !input.max){
-            min = 0;
-            max = 100;
-        }
+        let min = parseFloat(input.dataset.min || 0);
+        let max = parseFloat(input.dataset.max || 100);
 
-        let randomValue = (Math.random() * (max - min) + min).toFixed(2);
-        input.value = randomValue;
+        let randomValue = (Math.random() * (max - min) + min);
+
+        // round nicely
+        input.value = Number.isInteger(min) && Number.isInteger(max)
+            ? Math.floor(randomValue)
+            : randomValue.toFixed(2);
     });
 
-    // Fill dropdowns
+    // Dropdowns (including ratings + categorical)
     document.querySelectorAll("select").forEach(select => {
         let options = select.options;
         let randomIndex = Math.floor(Math.random() * options.length);
