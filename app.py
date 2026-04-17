@@ -11,6 +11,8 @@ app = Flask(__name__)   # 🔥 MUST COME BEFORE ANY @app.route
 
 model = joblib.load("attrition_model_calibrated.joblib")
 
+base_pipeline = model.calibrated_classifiers_[0].estimator
+
 # ------------------------------------------------
 # PIPELINE COMPONENTS
 # ------------------------------------------------
