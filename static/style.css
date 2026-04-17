@@ -117,6 +117,23 @@ input,select{
     transform:scale(1.05);
 }
 
+.random-btn{
+    display:block;
+    margin:40px auto 10px;
+    padding:14px 70px;
+    font-size:18px;
+    background: linear-gradient(135deg,#FEAE51,#F4C471);
+    color:black;
+    border:none;
+    border-radius:30px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.random-btn:hover{
+    transform:scale(1.05);
+}
+
 /* ---------- RESULT ---------- */
 
 .result-box{
