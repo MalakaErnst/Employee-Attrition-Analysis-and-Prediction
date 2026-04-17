@@ -37,7 +37,7 @@ CATEGORY_MAP = {
 
 NUMERIC_FEATURES = preprocessor.transformers_[1][2]
 
-NUMERIC_RANGES = {
+FEATURE_RANGES  = {
     "Age": (18, 60),
     "MonthlyIncome": (1000, 20000),
     "MonthlyRate": (1000, 20000),
@@ -51,18 +51,20 @@ NUMERIC_RANGES = {
     "YearsSinceLastPromotion": (0, 10),
     "YearsWithCurrManager": (0, 10),
     "TotalWorkingYears": (0, 40),
+    "StockOptionLevel": (0, 5)
+}
 
     # Satisfaction columns → fixed 1–5
-    "JobSatisfaction": (1, 5),
-    "EnvironmentSatisfaction": (1, 5),
-    "PerformanceRating": (1, 5),
-    "JobInvolvement": (1, 5),
-    "JobLevel": (1, 5),
-    "RelationshipSatisfaction": (1, 5),
-    "WorkLifeBalance": (1, 5),
-    "Education": (1, 5),
-    "StockOptionLevel": (0, 5),
-}
+RATING_FEATURES = [
+    "JobSatisfaction",
+    "EnvironmentSatisfaction",
+    "PerformanceRating",
+    "JobInvolvement",
+    "JobLevel",
+    "RelationshipSatisfaction",
+    "WorkLifeBalance",
+    "Education"
+]
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -149,6 +151,8 @@ def home():
     probability=probability,
     input_values=input_values,
     risk=risk,
-    shap_data=shap_data
+    shap_data=shap_data,
+    feature_ranges=FEATURE_RANGES,
+    rating_features=RATING_FEATURES
    
     )
