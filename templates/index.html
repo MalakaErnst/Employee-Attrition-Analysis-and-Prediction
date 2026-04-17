@@ -71,8 +71,11 @@ required>
 
 
 
-
-<button class="predict-btn">Predict Attrition Risk</button>
+<div style="display:flex; gap:10px;">
+    <button type="button" onclick="fillRandom()">🎲 Random</button>
+    <button class="predict-btn">Predict</button>
+</div>
+<!-- <button class="predict-btn">Predict Attrition Risk</button> -->
 
 </form>
 
@@ -193,6 +196,33 @@ document.addEventListener("DOMContentLoaded", function(){
     });
 
 });
+</script>
+
+<script>
+function fillRandom(){
+
+    // Fill numeric inputs
+    document.querySelectorAll("input[type='number']").forEach(input => {
+        let min = input.min ? parseFloat(input.min) : 0;
+        let max = input.max ? parseFloat(input.max) : 100;
+
+        // fallback range if not defined
+        if (!input.min && !input.max){
+            min = 0;
+            max = 100;
+        }
+
+        let randomValue = (Math.random() * (max - min) + min).toFixed(2);
+        input.value = randomValue;
+    });
+
+    // Fill dropdowns
+    document.querySelectorAll("select").forEach(select => {
+        let options = select.options;
+        let randomIndex = Math.floor(Math.random() * options.length);
+        select.selectedIndex = randomIndex;
+    });
+}
 </script>
 
 </body>
